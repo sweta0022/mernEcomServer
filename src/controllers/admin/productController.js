@@ -1,5 +1,44 @@
 const productModel = require("./../../models/productSchema");
 
+const getAllProducts = async (req,res) => {
+    try
+    {
+        const product = await productModel.find();
+        res.status(200).json({"status":200,'message':"Product fetch successfully",result:product});
+
+    }
+    catch(err)
+    {
+        res.status(500).json({"status":500,message:"Something went wrong",error:err});
+    }
+}
+
+const getOutOfStockCount = async(req,res) => {
+    try
+    {
+        const product = await productModel.countDocuments({Stock:0});
+        res.status(200).json({"status":200,'message':"Product fetch successfully",result:product});
+
+    }
+    catch(err)
+    {
+        res.status(500).json({"status":500,message:"Something went wrong",error:err});
+    }
+}
+
+const getInStockCount = async(req,res) => {
+    try
+    {
+        const product = await productModel.countDocuments({Stock:{ $gt:0 }});
+        res.status(200).json({"status":200,'message':"Product fetch successfully",result:product});
+
+    }
+    catch(err)
+    {
+        res.status(500).json({"status":500,message:"Something went wrong",error:err});
+    }
+}
+
 
 const createProduct = async( req, res) => {
     try
@@ -193,5 +232,5 @@ const deleteReviews = async(req, res) => {
      
 
 module.exports = {
-    createProduct, updateManyProduct, updateProduct, deleteProduct, getProductDetail, createUpdateReview, getProductReviews,deleteReviews
+    createProduct, updateManyProduct, updateProduct, deleteProduct, getProductDetail, createUpdateReview, getProductReviews,deleteReviews,getAllProducts,getOutOfStockCount,getInStockCount
 }
