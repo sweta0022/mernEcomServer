@@ -1,4 +1,5 @@
 const productModel = require("./../../models/productSchema");
+const cloudinary = require("cloudinary");
 
 const getAllProducts = async (req,res) => {
     try
@@ -43,13 +44,65 @@ const getInStockCount = async(req,res) => {
 const createProduct = async( req, res) => {
     try
     {
-        // req.body.user = req.userId;
-        productModel.create(req.body);
-        res.status(200).json({"status":200,message:"Product created"});
+       let images = [];
+
+     
+       if(typeof req.body.pro_image === 'string')
+       {
+       
+          images.push(req.body.pro_image);
+       }
+       else
+       {
+        
+         images = req.body.pro_image;
+       }
+      
+      
+       const imagesLink = [];
+       for(let i =0; i< images.length; i++)
+       {
+          
+           const result = await cloudinary.v2.uploader.upload(images[i],{
+            folder: "products",
+            // width: 150,
+            // crop: "scale",
+           });
+
+           imagesLink.push({
+            public_id: result.public_id,
+            url:result.secure_url
+           });
+
+       }
+
+           
+
+       req.body.images = imagesLink;
+       
+
+        const creatQry = await productModel.create({
+            "name":req.body.name,
+            "description":req.body.description,
+            "price":req.body.price,
+            "images":req.body.images,
+            "category":req.body.category,
+            "Stock":req.body.Stock,
+            "user":req.userId,
+            "category":req.body.category
+        });
+
+        if( !creatQry )
+        {
+            res.status(200).json({"status":406 ,message:"Something went wrong",error:creatQry});
+        }
+
+        res.status(200).json({"status":200,message:"Product created successfully."});
     }
     catch(err)
     {
-        res.status(400).json({"status":400,message:"Something went wrong",error:err});
+        // console.log(err);
+        res.status(500).json({"status":400,message:"Something went wrong",error:err.message});
     }
 }
 
@@ -70,7 +123,8 @@ const updateManyProduct = async( req, res ) => {
     }
     catch(err)
     {
-        res.status(400).json({"status":400,message:"Something went wrong",error:err});
+        
+        res.status(500).json({"status":400,message:"Something went wrong",error:err});
     }
     
 }
@@ -86,7 +140,43 @@ const updateProduct = async( req, res ) => {
         }
         else
         {
-            var _id = req.bodyyyy
+            let images = [];     
+            if(typeof req.body.pro_image === 'string')
+            {            
+                images.push(req.body.pro_image);
+            }
+            else
+            {                
+                images = req.body.pro_image;
+            }
+
+            if( images !== undefined )
+            {
+                // Deleting Images From Cloudinary
+                for (let i = 0; i < productExists.images.length; i++) {
+                    await cloudinary.v2.uploader.destroy(productExists.images[i].public_id);
+                }
+
+                const imagesLink = [];
+                for(let i =0; i< images.length; i++)
+                {
+                   
+                    const result = await cloudinary.v2.uploader.upload(images[i],{
+                     folder: "products",
+                     // width: 150,
+                     // crop: "scale",
+                    });
+         
+                    imagesLink.push({
+                     public_id: result.public_id,
+                     url:result.secure_url
+                    });
+         
+                }
+                req.body.images = imagesLink;
+            }
+
+          
             productExists = await productModel.findByIdAndUpdate( req.params.id, req.body,{new:true, runValidators: true, useFindAndModify:true } );     
 
             res.status(200).json({"status":200,message:"Product updated successfully", product: productExists});
@@ -97,21 +187,42 @@ const updateProduct = async( req, res ) => {
     }
     catch(err)
     {
-        res.status(400).json({"status":400,message:"Something went wrong",error:err});
+        res.status(500).json({"status":500,message:"Something went wrong",error:err.message});
     }
     
 }
 
 const deleteProduct = async( req, res ) => {
     try
-    {
-      const getAllUserNoSql = await userSchema.find();
-      res.status(200).json({"status":200,message:"Data retrieve",data:getAllUserNoSql});
+    {          
+      
+
+      const product = await productModel.findById(req.params.id);
+      if(!product)
+      {
+          res.status(404).json({"status":404,message:"Product Not Found"});
+      }
+      else
+      {
+          // Deleting Images From Cloudinary
+          for (let i = 0; i < product.images.length; i++) {
+            await cloudinary.v2.uploader.destroy(product.images[i].public_id);
+          }
+
+          await product.remove();
+
+          res.status(200).json({
+            status: 200,
+            message: "Product Deleted Successfully",
+          });
+        
+      }
+
 
     }
     catch(err)
     {
-        res.status(400).json({"status":400,message:"Something went wrong",error:err});
+        res.status(500).json({"status":500,message:"Something went wrong",error:err.message});
     }
     
 }

@@ -12,9 +12,10 @@ router.route('/api/v1/getOutOfStockCount').get(authenticate,productController.ge
 router.route('/api/v1/getInStockCount').get(authenticate,productController.getInStockCount);
 
 router.post('/api/v1/admin/product/create', authenticate, productController.createProduct);
-router.route('/admin/product/:id')
-      .put(authenticate,productController.updateProduct)
-      .delete(authenticate,productController.deleteProduct);
+router.route('/api/v1/admin/product/:id').put(authenticate, productController.updateProduct).delete(authenticate, productController.deleteProduct);
+// router.route('/admin/product/:id')
+//       .put(authenticate,productController.updateProduct)
+//       .delete(authenticate,productController.deleteProduct);
 router.put('/updateManyProduct',productController.updateManyProduct);
 router.route('/product/:id').get(authenticate,productController.getProductDetail);
 router.route('/api/v1/review').put(authenticate, productController.createUpdateReview);
